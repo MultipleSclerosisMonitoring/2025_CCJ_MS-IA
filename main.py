@@ -102,7 +102,7 @@ class ChunkExtractor:
 
     def create_chunks_and_extract(self):
         """
-        Iterates through DataFrame rows, splits ranges into chunks, and extracts.
+        Iterates through DataFrame rows, splits ranges into chunks, and extracts
 
         Returns:
             dict: Summary containing 'extracted' and 'skipped' chunk counts.
