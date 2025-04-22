@@ -85,7 +85,7 @@ class ChunkExtractor:
 
     def __init__(self, df, output_dir: str, chunk_duration: int, config_path: str):
         """
-        Initializes the chunk extraction.
+        Initializes the chunk extraction
 
         Args:
             df (pd.DataFrame): Input DataFrame with movement records.
