@@ -1,8 +1,0 @@
-influxdb-client==1.48.0
-black
-python-dateutil~=2.9.0.post0
-setuptools~=78.1.0
-urllib3~=2.4.0
-pandas
-PyYAML==6.0.2
-openpyxl==3.1.5
