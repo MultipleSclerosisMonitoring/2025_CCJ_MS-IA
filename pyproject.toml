@@ -5,7 +5,10 @@ description = "Extracción de datos de marcha desde InfluxDB"
 authors = ["José Campos Cuiña <jose.campos.cuina@alumnos.upm.es>"]
 license = "MIT"
 readme = "README.md"
-packages = [{ include = "InfluxDBms", from = "src" }]
+packages = [
+    { include = "InfluxDBms", from = "src" },
+    { include = "plotting", from = "src" }
+]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
