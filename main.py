@@ -1,14 +1,24 @@
+import argparse
 import os
 import pandas as pd
-
 from datetime import datetime, timedelta, timezone
 from InfluxDBms.cInfluxDB import cInfluxDB
 
 
 # Main function
 def main():
+    # Argument parsing
+    parser = argparse.ArgumentParser(
+        description="Extract MS data chunks from InfluxDB."
+    )
+    parser.add_argument("--input", required=True, help="Path to the input Excel file.")
+    parser.add_argument(
+        "--output", required=True, help="Directory to save the extracted chunks."
+    )
+    args = parser.parse_args()
+
     # Read the input Excel file
-    dataframe = pd.read_excel("./data/gait_class_references_v1.xlsx", sheet_name="data")
+    dataframe = pd.read_excel(args.input, sheet_name="data")
 
     # Check the columns and the first n rows
     print(dataframe.head(10).to_string())
@@ -25,7 +35,7 @@ def main():
         print(f"Error processing date columns: {e}")
 
     # Ensure the output directory exists
-    os.makedirs("./output/", exist_ok=True)
+    os.makedirs(args.output, exist_ok=True)
 
     # Initialize InfluxDB extractor
     db = cInfluxDB(config_path="./src/InfluxDBms/config_db.yaml")
@@ -38,7 +48,7 @@ def main():
     for dur in durations:
         print(f"\n⏳ Extrayendo segmentos de {dur} segundos...")
         # Extract
-        summary = db.export_chunks_to_excel(dataframe, "./output/", dur)
+        summary = db.export_chunks_to_excel(dataframe, args.output, dur)
         summary["duration"] = dur
         results.append(summary)
 
@@ -48,7 +58,7 @@ def main():
     print(df_summary)
 
     # Output Excel
-    df_summary.to_excel("./output/resumen_chunks.xlsx", index=False)
+    df_summary.to_excel(os.path.join(args.output, "resumen_chunks.xlsx"), index=False)
 
 
 if __name__ == "__main__":
