@@ -22,3 +22,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 extract-ms = "main:main"
+plot-ms = "plotting.plot_chunks:main"

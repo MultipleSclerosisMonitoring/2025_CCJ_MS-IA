@@ -269,7 +269,7 @@ class cInfluxDB:
                 chunk_end = current_time + chunk_td
                 for leg in ["Left", "Right"]:
                     filename = (
-                        f"{move_type}+{current_time.strftime('%Y-%m-%d_%H-%M-%S')}"
+                        f"{row['ry_to_use']}+{move_type}+{current_time.strftime('%Y-%m-%d_%H-%M-%S')}"
                         f"+{chunk_end.strftime('%Y-%m-%d_%H-%M-%S')}+{leg}.xlsx"
                     )
                     output_file = os.path.join(output_dir, filename)
