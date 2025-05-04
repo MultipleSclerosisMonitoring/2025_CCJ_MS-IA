@@ -11,13 +11,14 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
+python = ">=3.10,<3.12"
 pandas = "^2.2"
 influxdb-client = "^1.41"
 openpyxl = "^3.1"
 pyyaml = "^6.0.2"
 urllib3 = "^2.4.0"
 python-dateutil = "^2.9.0.post0"
+matplotlib = "^3.10.1"
 
 [build-system]
 requires = ["poetry-core"]
