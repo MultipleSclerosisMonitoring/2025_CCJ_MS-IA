@@ -243,48 +243,64 @@ class cInfluxDB:
         except Exception as exc:
             raise Exception(f"Error querying data: {exc}")
 
-    def export_chunks_to_excel(
-        self, df_refs: pd.DataFrame, output_dir: str, chunk_duration: int
-    ):
+    def export_chunks_for_segment(
+        self,
+        datefrom: datetime,
+        dateuntil: datetime,
+        ry_to_use: str,
+        move_type: str,
+        output_dir: str,
+        chunk_duration: int,
+        verbose: int = 1,
+    ) -> dict:
         """
-        Splits the data into time chunks and exports it for each movement and leg.
-
-        :param df_refs: DataFrame containing date ranges and subject/test codes.
-        :param output_dir: Directory where the Excel files will be saved.
-        :param chunk_duration: Duration of each chunk in seconds.
-        :return: Dictionary with a summary of extracted and skipped chunks.
+        Procesa un segmento individual del Excel y extrae los chunks por pierna.
         """
-
         chunk_td = timedelta(seconds=chunk_duration)
+        current_time = datefrom
         extracted = 0
         skipped = 0
+        resumen_por_tipo = {}
 
-        for _, row in df_refs.iterrows():
-            datefrom = row["datefrom"]
-            dateuntil = row["dateuntil"]
-            move_type = row["move_type"]
-            current_time = datefrom
+        os.makedirs(output_dir, exist_ok=True)
 
-            while current_time + chunk_td <= dateuntil:
-                chunk_end = current_time + chunk_td
-                for leg in ["Left", "Right"]:
-                    filename = (
-                        f"{row['ry_to_use']}+{move_type}+{current_time.strftime('%Y-%m-%d_%H-%M-%S')}"
-                        f"+{chunk_end.strftime('%Y-%m-%d_%H-%M-%S')}+{leg}.xlsx"
+        while current_time + chunk_td <= dateuntil:
+            chunk_end = current_time + chunk_td
+            for leg in ["Left", "Right"]:
+                filename = (
+                    f"{ry_to_use}+{move_type}+{current_time.strftime('%Y-%m-%d_%H-%M-%S')}"
+                    f"+{chunk_end.strftime('%Y-%m-%d_%H-%M-%S')}+{leg}.xlsx"
+                )
+                output_file = os.path.join(output_dir, filename)
+
+                try:
+                    if verbose >= 1:
+                        print(f"[Chunk] {filename}")
+
+                    self.extract_ms_by_codeid_leg(
+                        current_time, chunk_end, ry_to_use, leg, output_file
                     )
-                    output_file = os.path.join(output_dir, filename)
+                    extracted += 1
 
-                    try:
-                        self.extract_ms_by_codeid_leg(
-                            current_time, chunk_end, row["ry_to_use"], leg, output_file
-                        )
-                        extracted += 1
-                    except Exception as exc:
-                        print(exc)
+                    if verbose >= 2:
+                        df = pd.read_excel(output_file)
+                        print(f"   └── {leg}: {df.shape[0]} filas")
 
-                current_time = chunk_end
+                    if verbose >= 3:
+                        key = f"{leg}-{move_type}"
+                        resumen_por_tipo[key] = resumen_por_tipo.get(key, 0) + 1
 
-            if current_time < dateuntil:
-                skipped += 1
+                except Exception as exc:
+                    print(f"⚠️ Error al procesar {filename}: {exc}")
 
-        return {"extracted": extracted, "skipped": skipped}
+            current_time = chunk_end
+
+        if current_time < dateuntil:
+            skipped += 1
+
+        if verbose >= 3 and resumen_por_tipo:
+            print("\n📦 Resumen parcial por pie y tipo:")
+            for key, count in resumen_por_tipo.items():
+                print(f"  - {key}: {count} ficheros")
+
+        return {"extracted": extracted, "skipped": skipped, "details": resumen_por_tipo}
