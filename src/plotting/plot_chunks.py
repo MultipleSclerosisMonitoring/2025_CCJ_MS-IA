@@ -1,7 +1,9 @@
 import os
 import pandas as pd
 import argparse
+from pathlib import Path
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 from collections import defaultdict
 
 
@@ -17,11 +19,11 @@ def plot_chunk_signals(filepaths: list[str], output_dir: str = None, show: bool 
     qtok_data = defaultdict(list)
 
     # Group files by qtok (assumed in filename format: qtok+move+start+end+leg.xlsx)
-    for filepath in filepaths:
+    for filepath in tqdm(filepaths, desc="Processing chunks"):
         filename = Path(filepath).name
         parts = filename.split("+")
         if len(parts) < 5:
-            print(f"Skipping invalid filename: {filename}")
+            print(f"⚠️ Skipping invalid filename: {filename}")
             continue
 
         qtok = parts[0]
@@ -85,7 +87,7 @@ def main():
     files = [
         os.path.join(args.input, f)
         for f in os.listdir(args.input)
-        if f.lower().endswith(".xlsx")
+        if f.lower().endswith(".xlsx") and "+" in f
     ]
     plot_chunk_signals(files, output_dir=args.output, show=not args.no_show)
 
