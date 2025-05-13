@@ -8,17 +8,16 @@ from collections import defaultdict
 
 
 def plot_chunk_signals(filepaths: list[str], output_dir: str = None, show: bool = True):
-    """
-    Plot pressure signals (S0, S1, S2) from multiple chunk files grouped by qtok.
-
-    :param filepaths: List of paths to .xlsx chunk files.
-    :param output_dir: Directory to save plots as PNG (optional).
-    :param show: Whether to display plots on screen (default: True).
-    """
+    from collections import defaultdict
+    from pathlib import Path
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    from tqdm import tqdm
 
     qtok_data = defaultdict(list)
+    saved_count = 0
+    skipped_count = 0
 
-    # Group files by qtok (assumed in filename format: qtok+move+start+end+leg.xlsx)
     for filepath in tqdm(filepaths, desc="Processing chunks"):
         filename = Path(filepath).name
         parts = filename.split("+")
@@ -36,7 +35,7 @@ def plot_chunk_signals(filepaths: list[str], output_dir: str = None, show: bool 
                 continue
 
             if df[["S0", "S1", "S2"]].dropna().empty:
-                print(f"⚠️  No valid pressure data in {filename}")
+                print(f"⚠️ No valid pressure data in {filename}")
                 continue
 
             df["_time"] = pd.to_datetime(df["_time"])
@@ -46,6 +45,12 @@ def plot_chunk_signals(filepaths: list[str], output_dir: str = None, show: bool 
             print(f"Error reading {filename}: {e}")
 
     for qtok, leg_dfs in qtok_data.items():
+        plot_path = Path(output_dir) / f"{qtok}_pressures.png"
+        if plot_path.exists():
+            print(f"⏩ Skipping already plotted: {plot_path.name}")
+            skipped_count += 1
+            continue
+
         fig, ax = plt.subplots(figsize=(14, 6))
         for leg, df in leg_dfs:
             for signal in ["S0", "S1", "S2"]:
@@ -59,11 +64,10 @@ def plot_chunk_signals(filepaths: list[str], output_dir: str = None, show: bool 
         fig.autofmt_xdate()
         fig.tight_layout()
 
-        if output_dir:
-            Path(output_dir).mkdir(parents=True, exist_ok=True)
-            plot_path = Path(output_dir) / f"{qtok}_pressures.png"
-            fig.savefig(plot_path)
-            print(f"✅ Saved plot: {plot_path}")
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        fig.savefig(plot_path)
+        saved_count += 1
+        print(f"✅ Saved plot: {plot_path}")
 
         if show:
             plt.show()
@@ -72,6 +76,7 @@ def plot_chunk_signals(filepaths: list[str], output_dir: str = None, show: bool 
 
     plt.close("all")
 
+    print(f"\n📊 Summary: {saved_count} images saved, {skipped_count} skipped (already existed).")
 
 def main():
     parser = argparse.ArgumentParser(
