@@ -18,6 +18,7 @@ def plot_chunk_signals(filepaths: list[str], output_dir: str = None, show: bool 
     saved_count = 0
     skipped_count = 0
 
+    # Agrupar por qtok
     for filepath in tqdm(filepaths, desc="Processing chunks"):
         filename = Path(filepath).name
         parts = filename.split("+")
@@ -44,6 +45,7 @@ def plot_chunk_signals(filepaths: list[str], output_dir: str = None, show: bool 
         except Exception as e:
             print(f"Error reading {filename}: {e}")
 
+    # Crear gráficos
     for qtok, leg_dfs in qtok_data.items():
         plot_path = Path(output_dir) / f"{qtok}_pressures.png"
         if plot_path.exists():
@@ -51,23 +53,43 @@ def plot_chunk_signals(filepaths: list[str], output_dir: str = None, show: bool 
             skipped_count += 1
             continue
 
-        fig, ax = plt.subplots(figsize=(14, 6))
+        # Agrupar por pierna
+        grouped_by_leg = defaultdict(list)
         for leg, df in leg_dfs:
-            for signal in ["S0", "S1", "S2"]:
-                ax.plot(df["_time"], df[signal], label=f"{signal} - {leg}")
+            grouped_by_leg[leg].append(df)
 
-        ax.set_title(f"Pressure Signals for {qtok}")
-        ax.set_xlabel("Time")
-        ax.set_ylabel("Pressure (S0/S1/S2)")
-        ax.legend(loc="upper right")
-        ax.grid(True)
+        fig, axs = plt.subplots(
+            nrows=1,
+            ncols=len(grouped_by_leg),
+            figsize=(16, 5),
+            sharex=True,
+            sharey=True,
+            squeeze=False,
+        )
+
+        for idx, (leg, dfs) in enumerate(grouped_by_leg.items()):
+            ax = axs[0][idx]
+            legend_drawn = set()
+            for df in dfs:
+                for signal in ["S0", "S1", "S2"]:
+                    if signal in df.columns:
+                        label = signal if signal not in legend_drawn else None
+                        ax.plot(df["_time"], df[signal], label=label)
+                        legend_drawn.add(signal)
+
+            ax.set_title(f"{qtok} - {leg}")
+            ax.set_xlabel("Time")
+            ax.set_ylabel("Pressure")
+            ax.grid(True)
+            ax.legend(loc="upper right")
+
         fig.autofmt_xdate()
         fig.tight_layout()
 
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         fig.savefig(plot_path)
-        saved_count += 1
         print(f"✅ Saved plot: {plot_path}")
+        saved_count += 1
 
         if show:
             plt.show()
@@ -75,7 +97,6 @@ def plot_chunk_signals(filepaths: list[str], output_dir: str = None, show: bool 
             plt.close(fig)
 
     plt.close("all")
-
     print(
         f"\n📊 Summary: {saved_count} images saved, {skipped_count} skipped (already existed)."
     )
