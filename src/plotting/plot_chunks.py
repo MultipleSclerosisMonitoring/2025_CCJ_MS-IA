@@ -76,7 +76,10 @@ def plot_chunk_signals(filepaths: list[str], output_dir: str = None, show: bool 
 
     plt.close("all")
 
-    print(f"\n📊 Summary: {saved_count} images saved, {skipped_count} skipped (already existed).")
+    print(
+        f"\n📊 Summary: {saved_count} images saved, {skipped_count} skipped (already existed)."
+    )
+
 
 def main():
     parser = argparse.ArgumentParser(
