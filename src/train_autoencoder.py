@@ -7,11 +7,22 @@ from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import (
-    Input, LSTM, RepeatVector, TimeDistributed, Dense,
-    Bidirectional, Dropout, LayerNormalization
+    Input,
+    LSTM,
+    RepeatVector,
+    TimeDistributed,
+    Dense,
+    Bidirectional,
+    Dropout,
+    LayerNormalization,
 )
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, CSVLogger
+from tensorflow.keras.callbacks import (
+    EarlyStopping,
+    ModelCheckpoint,
+    ReduceLROnPlateau,
+    CSVLogger,
+)
 
 
 def set_seeds(seed=42):
@@ -40,10 +51,12 @@ def load_data(path: str):
 
 def build_autoencoder(timesteps: int, features: int, encoding_dim: int) -> Model:
     inputs = Input(shape=(timesteps, features))
-    x = Bidirectional(LSTM(encoding_dim, activation='tanh'), name="encoder_lstm")(inputs)
+    x = Bidirectional(LSTM(encoding_dim, activation="tanh"), name="encoder_lstm")(
+        inputs
+    )
     x = LayerNormalization()(x)
     x = RepeatVector(timesteps)(x)
-    x = LSTM(encoding_dim, activation='tanh', return_sequences=True)(x)
+    x = LSTM(encoding_dim, activation="tanh", return_sequences=True)(x)
     x = Dropout(0.2)(x)
     outputs = TimeDistributed(Dense(features, activation="linear"))(x)
     return Model(inputs, outputs)
@@ -52,7 +65,7 @@ def build_autoencoder(timesteps: int, features: int, encoding_dim: int) -> Model
 def train_autoencoder(X, encoding_dim=64, batch_size=32, epochs=50):
     timesteps, features = X.shape[1], X.shape[2]
     model = build_autoencoder(timesteps, features, encoding_dim)
-    model.compile(optimizer=Adam(learning_rate=0.001), loss='mse')
+    model.compile(optimizer=Adam(learning_rate=0.001), loss="mse")
 
     Path("models").mkdir(exist_ok=True)
 
@@ -63,16 +76,17 @@ def train_autoencoder(X, encoding_dim=64, batch_size=32, epochs=50):
         EarlyStopping(patience=10, restore_best_weights=True),
         ModelCheckpoint("models/best_autoencoder.h5", save_best_only=True),
         ReduceLROnPlateau(patience=5, factor=0.5, verbose=1),
-        CSVLogger("models/training_log.csv")
+        CSVLogger("models/training_log.csv"),
     ]
 
-    ds = tf.data.Dataset.from_tensor_slices((X, X)).shuffle(1000).batch(batch_size).prefetch(tf.data.AUTOTUNE)
-
-    history = model.fit(
-        ds,
-        epochs=epochs,
-        callbacks=callbacks
+    ds = (
+        tf.data.Dataset.from_tensor_slices((X, X))
+        .shuffle(1000)
+        .batch(batch_size)
+        .prefetch(tf.data.AUTOTUNE)
     )
+
+    history = model.fit(ds, epochs=epochs, callbacks=callbacks)
 
     model.save("models/autoencoder_lstm.h5")
     np.save("models/loss_history.npy", history.history)
@@ -95,4 +109,9 @@ if __name__ == "__main__":
 
     set_seeds()
     X = load_data(args.input)
-    train_autoencoder(X, encoding_dim=args.encoding_dim, batch_size=args.batch_size, epochs=args.epochs)
+    train_autoencoder(
+        X,
+        encoding_dim=args.encoding_dim,
+        batch_size=args.batch_size,
+        epochs=args.epochs,
+    )
