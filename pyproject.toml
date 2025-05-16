@@ -20,6 +20,7 @@ urllib3 = "^2.4.0"
 python-dateutil = "^2.9.0.post0"
 matplotlib = "^3.10.1"
 tqdm = "^4.67.1"
+tensorflow = "^2.15.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -28,3 +29,4 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 extract-ms = "main:main"
 plot-ms = "plotting.plot_chunks:main"
+export-data = "export_model_data:main"
