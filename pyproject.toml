@@ -29,4 +29,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 extract-ms = "main:main"
 plot-ms = "plotting.plot_chunks:main"
-export-data = "export_model_data:main"
+export-balanced = "export_balanced_chunks:main"
+train-transformer = "train_transformer_autoencoder:main"
+encode-latent = "encode_latent_transformer:main"
