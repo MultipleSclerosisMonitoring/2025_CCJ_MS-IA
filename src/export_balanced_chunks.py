@@ -9,7 +9,7 @@ from collections import Counter
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Export structured chunks to X/y arrays."
+        description="Export balanced chunks to X/y arrays."
     )
     parser.add_argument("--input", default="output", help="Folder with .xlsx chunks.")
     parser.add_argument(
@@ -38,7 +38,7 @@ def main():
     sensors = ["S0", "S1", "S2", "Ax", "Ay", "Az", "Gx", "Gy", "Gz", "Mx", "My", "Mz"]
     label_map = {"walking": 1, "not_walking": 0}
 
-    X, y = [], []
+    X_all, y_all, files_all = [], [], []
     label_counter = Counter()
     skipped_too_short = 0
     skipped_missing_sensors = 0
@@ -93,8 +93,9 @@ def main():
                 else:
                     data = data[: args.length]
 
-            X.append(data)
-            y.append(label_map[move_type])
+            X_all.append(data)
+            y_all.append(label_map[move_type])
+            files_all.append(file.name)
             label_counter[move_type] += 1
 
             if args.verbose == 2:
@@ -104,21 +105,36 @@ def main():
             if args.verbose >= 2:
                 print(f"⚠️ Error processing {file.name}: {e}")
 
-    # Guardar
-    X = np.array(X)
-    y = np.array(y)
+    # Convertir a arrays
+    X_all = np.array(X_all)
+    y_all = np.array(y_all)
 
-    np.save(output_dir / "X_chunks.npy", X)
-    np.save(output_dir / "y_chunks.npy", y)
+    # Balancear clases
+    walking_idx = np.where(y_all == 1)[0]
+    not_walking_idx = np.where(y_all == 0)[0]
+    min_class_count = min(len(walking_idx), len(not_walking_idx))
 
-    print(f"\n✅ Saved: {len(X)} samples")
-    print(f"📐 X shape: {X.shape} | y shape: {y.shape}")
+    np.random.shuffle(walking_idx)
+    np.random.shuffle(not_walking_idx)
+
+    selected_idx = np.concatenate(
+        [walking_idx[:min_class_count], not_walking_idx[:min_class_count]]
+    )
+    np.random.shuffle(selected_idx)
+
+    X_bal = X_all[selected_idx]
+    y_bal = y_all[selected_idx]
+
+    np.save(output_dir / "X_balanced.npy", X_bal)
+    np.save(output_dir / "y_balanced.npy", y_bal)
+
+    print(f"\n✅ Balanced dataset saved: {len(X_bal)} samples")
+    print(f"📐 X_balanced shape: {X_bal.shape} | y_balanced shape: {y_bal.shape}")
 
     if args.verbose == 3:
-        print("\n📊 Class distribution:")
-        for label, count in label_counter.items():
-            print(f"  - {label}: {count}")
-
+        print("\n📊 Class distribution after balancing:")
+        print(f"  - walking: {sum(y_bal == 1)}")
+        print(f"  - not_walking: {sum(y_bal == 0)}")
         print("\n🚫 Skipped files:")
         print(f"  - Too short: {skipped_too_short}")
         print(f"  - Missing sensors: {skipped_missing_sensors}")
