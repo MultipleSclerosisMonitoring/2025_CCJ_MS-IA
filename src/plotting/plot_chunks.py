@@ -1,3 +1,13 @@
+"""
+plot_chunks.py
+
+This script visualizes pressure sensor data from .xlsx chunk files grouped by token and leg.
+It generates and optionally displays time-series plots, saving them as PNG images to an output directory.
+
+Example:
+    python plot_chunks.py --input ./chunks/ --output ./plots/ --no-show
+"""
+
 import os
 import pandas as pd
 import argparse
@@ -8,17 +18,24 @@ from collections import defaultdict
 
 
 def plot_chunk_signals(filepaths: list[str], output_dir: str = None, show: bool = True):
-    from collections import defaultdict
-    from pathlib import Path
-    import pandas as pd
-    import matplotlib.pyplot as plt
-    from tqdm import tqdm
+    """
+    Plots pressure signals (S0, S1, S2) from .xlsx files grouped by token and leg.
 
+    For each unique token (qtok), creates a single image with subplots per leg.
+    Images are saved only if they do not already exist.
+
+    Args:
+        filepaths (list[str]): List of paths to .xlsx files to process.
+        output_dir (str, optional): Directory where plots will be saved. Required if saving is needed.
+        show (bool): Whether to display the plots interactively.
+
+    Returns:
+        None
+    """
     qtok_data = defaultdict(list)
     saved_count = 0
     skipped_count = 0
 
-    # Agrupar por qtok
     for filepath in tqdm(filepaths, desc="Processing chunks"):
         filename = Path(filepath).name
         parts = filename.split("+")
@@ -45,7 +62,6 @@ def plot_chunk_signals(filepaths: list[str], output_dir: str = None, show: bool 
         except Exception as e:
             print(f"Error reading {filename}: {e}")
 
-    # Crear gráficos
     for qtok, leg_dfs in qtok_data.items():
         plot_path = Path(output_dir) / f"{qtok}_pressures.png"
         if plot_path.exists():
@@ -53,7 +69,6 @@ def plot_chunk_signals(filepaths: list[str], output_dir: str = None, show: bool 
             skipped_count += 1
             continue
 
-        # Agrupar por pierna
         grouped_by_leg = defaultdict(list)
         for leg, df in leg_dfs:
             grouped_by_leg[leg].append(df)
@@ -103,6 +118,15 @@ def plot_chunk_signals(filepaths: list[str], output_dir: str = None, show: bool 
 
 
 def main():
+    """
+    Entry point for the script.
+
+    Parses command-line arguments, filters input .xlsx files, and generates plots
+    for pressure data using `plot_chunk_signals`.
+
+    Returns:
+        None
+    """
     parser = argparse.ArgumentParser(
         description="Plot pressure signals from chunk files."
     )

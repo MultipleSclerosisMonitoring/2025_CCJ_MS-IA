@@ -1,3 +1,14 @@
+"""
+export_balanced_chunks.py
+
+This script reads segmented .xlsx files containing sensor data, processes them into fixed-length arrays,
+labels them according to movement type (walking or not), balances the class distribution, and saves the
+resulting datasets as NumPy arrays.
+
+Example:
+    python export_balanced_chunks.py --input output/ --output data/ --length 250 --mode pad --verbose 2
+"""
+
 import argparse
 import os
 import pandas as pd
@@ -8,6 +19,23 @@ from collections import Counter
 
 
 def main():
+    """
+    Main execution function.
+
+    Parses CLI arguments to process chunk files in a folder, converts them to fixed-length
+    arrays for machine learning, balances the dataset classes, and saves the arrays to disk.
+
+    CLI Args:
+        --input (str): Folder containing .xlsx chunk files.
+        --output (str): Output directory for the resulting .npy files.
+        --length (int): Fixed length of the output samples.
+        --mode (str): Padding or truncation strategy for short samples ('pad' or 'truncate').
+        --verbose (int): Verbosity level (0-3).
+
+    Output:
+        Saves X_balanced.npy and y_balanced.npy arrays in the output directory.
+        Also prints summary and skipped file stats.
+    """
     parser = argparse.ArgumentParser(
         description="Export balanced chunks to X/y arrays."
     )

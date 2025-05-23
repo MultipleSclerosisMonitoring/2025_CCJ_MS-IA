@@ -1,3 +1,14 @@
+"""
+encode_latent_transformer.py
+
+Uses a trained Transformer encoder model to generate latent representations from time-series
+sensor data. Loads X and y from .npy files, applies the encoder, and saves the encoded output.
+
+Example:
+    python encode_latent_transformer.py --X data/X_balanced.npy --y data/y_balanced.npy \
+           --encoder models/encoder_transformer.h5 --output latent_data/
+"""
+
 import numpy as np
 import argparse
 from pathlib import Path
@@ -5,6 +16,22 @@ from tensorflow.keras.models import load_model
 
 
 def main():
+    """
+    Main function to encode sensor data using a pretrained Transformer encoder.
+
+    CLI Arguments:
+        --X (str): Path to X_balanced.npy containing sensor input data.
+        --y (str): Path to y_balanced.npy containing class labels.
+        --encoder (str): Path to a .h5 file containing the trained Transformer encoder.
+        --output (str): Output directory to save encoded data (default: "data_model").
+        --batch_size (int): Batch size to use during prediction (default: 32).
+
+    The function:
+        - Loads input features and labels.
+        - Loads a trained encoder model.
+        - Applies the encoder to extract latent features.
+        - Saves latent representations and corresponding labels as .npy files.
+    """
     parser = argparse.ArgumentParser(
         description="Encode sensor chunks using trained transformer encoder."
     )
@@ -25,22 +52,3 @@ def main():
 
     print("📦 Loading data...")
     X = np.load(args.X)
-    y = np.load(args.y)
-
-    assert len(X.shape) == 3, "❌ X must have shape (samples, timesteps, features)"
-    assert X.shape[0] == y.shape[0], "❌ X and y must have the same number of samples"
-
-    print("🧠 Loading encoder model...")
-    encoder = load_model(args.encoder)
-
-    print("🔁 Encoding with transformer encoder...")
-    X_latent = encoder.predict(X, batch_size=args.batch_size, verbose=1)
-
-    print(f"\n✅ Encoded shape: {X_latent.shape}, saving to {args.output}")
-    np.save(Path(args.output) / "X_latent.npy", X_latent)
-    np.save(Path(args.output) / "y_latent.npy", y)
-    print("📁 Saved: X_latent.npy and y_latent.npy")
-
-
-if __name__ == "__main__":
-    main()

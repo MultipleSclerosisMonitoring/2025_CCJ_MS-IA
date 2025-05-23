@@ -11,7 +11,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
+python = ">=3.10,<4.0"
 pandas = "^2.2"
 influxdb-client = "^1.41"
 openpyxl = "^3.1"

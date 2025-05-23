@@ -1,5 +1,5 @@
 # 2025_CCJ_MS-IA
-Gait identification using IA-DL
+Gait identification using AI and Deep Learning
 
 
 # InfluxDBMS - Gait Data Extraction and Segmentation from InfluxDB
@@ -28,8 +28,9 @@ pyproject.toml            # Poetry project definition
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-user/influxdbms.git
-cd influxdbms
+git clone https://github.com/MultipleSclerosisMonitoring/2025_CCJ_MS-IA
+cd 2025_CCJ_MS-IA
+
 
 # Install dependencies using Poetry
 poetry install
@@ -48,6 +49,7 @@ influxdb:
   token: "YOUR_PRIVATE_TOKEN"
   url: "https://YOUR_SERVER_IP:8086"
 ```
+You can use the provided config.yaml as a template.
 
 2. Make sure `.config_db.yaml` is listed in `.gitignore`.
 
@@ -56,7 +58,11 @@ influxdb:
 ## Run the Extraction Script
 
 ```bash
-poetry run extract-ms   --input ./data/segments.xlsx   --output ./output   --durations 5 10 15   --verbose 2
+python main.py \
+  --input ./data/segments.xlsx \
+  --output ./output \
+  --durations 5 10 15 \
+  --verbose 2
 ```
 
 - `--input`: Excel file with time-labeled movement segments
@@ -69,7 +75,7 @@ poetry run extract-ms   --input ./data/segments.xlsx   --output ./output   --dur
 ## Visualize Chunked Signals
 
 ```bash
-poetry run plot-ms --input ./output --output ./plots --no-show
+python src/plotting/plot_chunks.py --input ./output --output ./plots --no-show
 ```
 
 This generates PNG plots per subject and leg from the exported `.xlsx` chunks.
