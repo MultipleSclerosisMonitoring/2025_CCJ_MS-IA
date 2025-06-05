@@ -1,0 +1,8 @@
+pandas
+numpy
+h5py
+tqdm
+joblib
+scikit-learn
+tensorflow
+openpyxl

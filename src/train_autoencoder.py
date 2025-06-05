@@ -176,7 +176,28 @@ def train_model(
     print("\n✅ Training completed and models saved.")
 
 
-if __name__ == "__main__":
+def main():
+    """
+    Main entry point for training a Transformer-based autoencoder on time series sensor data.
+
+    This function:
+    1. Defines and parses command-line arguments.
+    2. Sets seeds for reproducibility.
+    3. Loads and normalizes time series data from an HDF5 file using StandardScaler.
+    4. Builds and trains a Transformer autoencoder using the specified hyperparameters.
+    5. Saves the model, encoder, training log, and loss history to the output directory.
+
+    Command-line arguments:
+    --input         Path to HDF5 file containing dataset with 'X' array.
+    --epochs        Number of training epochs (default: 50).
+    --batch_size    Size of training batches (default: 32).
+    --output        Output directory to save models and logs (default: models).
+    --head_size     Size of each attention head (default: 64).
+    --num_heads     Number of attention heads (default: 2).
+    --ff_dim        Dimensionality of feed-forward layers (default: 128).
+    --dropout       Dropout rate for all dropout layers (default: 0.1).
+    --num_blocks    Number of Transformer encoder/decoder blocks (default: 2).
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--input", type=str, required=True, help="Path to .hdf5 dataset with X"
@@ -186,8 +207,6 @@ if __name__ == "__main__":
         "--batch_size", type=int, default=32, help="Training batch size"
     )
     parser.add_argument("--output", type=str, default="models", help="Output directory")
-
-    # 🧪 Parametrización avanzada del encoder
     parser.add_argument(
         "--head_size", type=int, default=64, help="Size of each attention head"
     )
@@ -217,3 +236,7 @@ if __name__ == "__main__":
         dropout=args.dropout,
         num_blocks=args.num_blocks,
     )
+
+
+if __name__ == "__main__":
+    main()
