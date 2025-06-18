@@ -116,9 +116,7 @@ def main():
         output_dir = f"models_len{length}"
 
         cmd = [
-            "poetry",
-            "run",
-            "python",
+             "python3",
             args.train_script,
             "--input",
             str(truncated_path),
