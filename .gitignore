@@ -179,3 +179,20 @@ cython_debug/
 
 #Config_DB
 .config_db.yaml
+
+# Ignorar archivos pesados comunes de entrenamiento
+*.h5
+*.npy
+*.npz
+*.pkl
+*.hdf5
+*.ckpt
+*.weights
+*.pt
+*.onnx
+
+# Ignorar carpetas de modelos si no quieres subir nada de ellas
+models/
+checkpoints/
+logs/
+
