@@ -16,7 +16,7 @@ Usage:
 import argparse
 import os
 import pandas as pd
-import numpy as n
+import numpy as np
 import h5py
 from pathlib import Path
 from tqdm import tqdm
