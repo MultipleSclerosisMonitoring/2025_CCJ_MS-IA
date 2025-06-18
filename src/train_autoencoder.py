@@ -17,7 +17,7 @@ import joblib
 import h5py
 from pathlib import Path
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import (
@@ -36,7 +36,12 @@ from tensorflow.keras.optimizers import Adam
 
 
 def set_seeds(seed=42):
-    """Set seeds for reproducibility across NumPy, TensorFlow, and Python."""
+    """Set seeds for reproducibility across NumPy, TensorFlow, and Python.
+
+    Args:
+        seed (int): Seed value to ensure reproducibility. Default is 42.
+    """
+
     np.random.seed(seed)
     tf.random.set_seed(seed)
     random.seed(seed)
@@ -44,14 +49,16 @@ def set_seeds(seed=42):
 
 
 def load_and_normalize_from_hdf5(hdf5_path: str, output_dir="models") -> np.ndarray:
-    """Load sensor data from an HDF5 file and normalize using StandardScaler.
+    """Load and normalize 3D sensor data from an HDF5 file.
+
+    StandardScaler is applied to flatten features across time, then reshaped back.
 
     Args:
-        hdf5_path (str): Path to HDF5 file containing 'X' dataset.
-        output_dir (str): Directory to save the scaler object.
+        hdf5_path (str): Path to the HDF5 file containing dataset 'X'.
+        output_dir (str): Directory where the scaler will be saved.
 
     Returns:
-        np.ndarray: Normalized data with shape (samples, timesteps, features).
+        np.ndarray: Normalized array of shape (samples, timesteps, features).
     """
     with h5py.File(hdf5_path, "r") as f:
         X = f["X"][:]
@@ -70,7 +77,19 @@ def load_and_normalize_from_hdf5(hdf5_path: str, output_dir="models") -> np.ndar
 
 
 def transformer_encoder(inputs, head_size=64, num_heads=2, ff_dim=128, dropout=0.1):
-    """Builds a single Transformer encoder block."""
+    """Creates a single Transformer encoder block with multi-head attention and feed-forward layers.
+
+    Args:
+        inputs (tf.Tensor): Input tensor of shape (batch_size, timesteps, features).
+        head_size (int): Dimensionality of each attention head.
+        num_heads (int): Number of parallel attention heads.
+        ff_dim (int): Dimensionality of the feed-forward layer.
+        dropout (float): Dropout rate applied after attention and feed-forward layers.
+
+    Returns:
+        tf.Tensor: Output tensor after the transformer encoder block.
+    """
+
     x = MultiHeadAttention(num_heads=num_heads, key_dim=head_size)(inputs, inputs)
     x = Dropout(dropout)(x)
     x = Add()([x, inputs])
@@ -93,19 +112,21 @@ def build_transformer_autoencoder(
     num_blocks=2,
     dropout=0.1,
 ) -> Model:
-    """Constructs the Transformer-based autoencoder model.
+    """Builds a Transformer-based autoencoder for time series data.
+
+    The architecture includes a symmetric encoder-decoder with multi-head self-attention.
 
     Args:
-        timesteps (int): Number of time steps in input.
-        features (int): Number of features per time step.
+        timesteps (int): Number of time steps in input sequences.
+        features (int): Number of input features per time step.
         head_size (int): Size of each attention head.
         num_heads (int): Number of attention heads.
-        ff_dim (int): Size of feed-forward hidden layer.
-        num_blocks (int): Number of Transformer blocks in encoder/decoder.
-        dropout (float): Dropout rate used in all layers.
+        ff_dim (int): Hidden layer size of the feed-forward block.
+        num_blocks (int): Number of transformer blocks used in encoder and decoder.
+        dropout (float): Dropout rate for attention and feed-forward layers.
 
     Returns:
-        Model: Keras Model of the autoencoder.
+        Model: Keras Model representing the autoencoder.
     """
     inputs = Input(shape=(timesteps, features))
     x = inputs
@@ -122,110 +143,139 @@ def build_transformer_autoencoder(
     return Model(inputs, outputs)
 
 
-def train_model(
-    X,
-    output_dir="models",
-    epochs=50,
-    batch_size=32,
-    head_size=64,
-    num_heads=2,
-    ff_dim=128,
-    dropout=0.1,
-    num_blocks=2,
+def train_model_kfold(
+    X: np.ndarray,
+    output_dir: str = "models",
+    epochs: int = 50,
+    batch_size: int = 32,
+    head_size: int = 64,
+    num_heads: int = 2,
+    ff_dim: int = 128,
+    dropout: float = 0.1,
+    num_blocks: int = 2,
+    n_splits: int = 5,
+    resume_from_fold: int = 1,
 ):
-    """Train the autoencoder model and save models and logs."""
-    timesteps, features = X.shape[1], X.shape[2]
-    model = build_transformer_autoencoder(
-        timesteps,
-        features,
-        head_size=head_size,
-        num_heads=num_heads,
-        ff_dim=ff_dim,
-        dropout=dropout,
-        num_blocks=num_blocks,
-    )
-    model.compile(optimizer=Adam(0.001), loss="mse")
+    """Train a Transformer autoencoder using K-Fold cross-validation.
 
+    Args:
+        X (np.ndarray): Input data of shape (samples, timesteps, features).
+        output_dir (str): Base directory to save models and logs.
+        epochs (int): Number of training epochs.
+        batch_size (int): Batch size for training.
+        head_size (int): Size of each attention head.
+        num_heads (int): Number of attention heads.
+        ff_dim (int): Size of feed-forward layer.
+        dropout (float): Dropout rate.
+        num_blocks (int): Number of transformer blocks.
+        n_splits (int): Number of K-folds for cross-validation.
+    """
     Path(output_dir).mkdir(exist_ok=True)
+    timesteps, features = X.shape[1], X.shape[2]
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 
-    X_train, X_val = train_test_split(X, test_size=0.1, random_state=42)
+    for fold, (train_idx, val_idx) in enumerate(kf.split(X), 1):
+        if fold < resume_from_fold:
+            print(f"⏭️  Skipping fold {fold} (already completed)")
+            continue
 
-    callbacks = [
-        EarlyStopping(patience=10, restore_best_weights=True),
-        ModelCheckpoint(
-            f"{output_dir}/best_transformer_autoencoder.h5", save_best_only=True
-        ),
-        CSVLogger(f"{output_dir}/training_log.csv"),
-    ]
+        print(f"\n--- Fold {fold}/{n_splits} ---")
+        fold_dir = Path(output_dir) / f"fold_{fold}"
+        fold_dir.mkdir(parents=True, exist_ok=True)
 
-    history = model.fit(
-        X_train,
-        X_train,
-        validation_data=(X_val, X_val),
-        epochs=epochs,
-        batch_size=batch_size,
-        shuffle=True,
-        callbacks=callbacks,
-    )
+        X_train, X_val = X[train_idx], X[val_idx]
 
-    model.save(f"{output_dir}/transformer_autoencoder.h5")
-    encoder = Model(model.input, model.get_layer("encoder_output").output)
-    encoder.save(f"{output_dir}/encoder_transformer.h5")
-    np.save(f"{output_dir}/loss_history.npy", history.history)
+        model = build_transformer_autoencoder(
+            timesteps, features, head_size, num_heads, ff_dim, num_blocks, dropout
+        )
+        model.compile(optimizer=Adam(0.001), loss="mse")
 
-    print("\n✅ Training completed and models saved.")
+        callbacks = [
+            EarlyStopping(patience=10, restore_best_weights=True),
+            ModelCheckpoint(str(fold_dir / "best_model.h5"), save_best_only=True),
+            CSVLogger(str(fold_dir / "training_log.csv")),
+        ]
+
+        history = model.fit(
+            X_train,
+            X_train,
+            validation_data=(X_val, X_val),
+            epochs=epochs,
+            batch_size=batch_size,
+            shuffle=True,
+            callbacks=callbacks,
+        )
+
+        model.save(fold_dir / "transformer_autoencoder.h5")
+        encoder = Model(model.input, model.get_layer("encoder_output").output)
+        encoder.save(fold_dir / "encoder_transformer.h5")
+        np.save(fold_dir / "loss_history.npy", history.history)
+
+    print("\n✅ All folds completed.")
 
 
 def main():
     """
-    Main entry point for training a Transformer-based autoencoder on time series sensor data.
+    Entry point for training a Transformer autoencoder on time series data using K-Fold cross-validation.
 
-    This function:
-    1. Defines and parses command-line arguments.
-    2. Sets seeds for reproducibility.
-    3. Loads and normalizes time series data from an HDF5 file using StandardScaler.
-    4. Builds and trains a Transformer autoencoder using the specified hyperparameters.
-    5. Saves the model, encoder, training log, and loss history to the output directory.
+    This routine performs the following steps:
+    1. Parses command-line arguments for model configuration and data paths.
+    2. Sets random seeds to ensure reproducible training.
+    3. Loads time series data from an HDF5 file and normalizes it using StandardScaler.
+    4. Applies K-Fold cross-validation to train multiple autoencoders.
+    5. Saves each fold's model, encoder, training log, and loss history.
 
-    Command-line arguments:
-    --input         Path to HDF5 file containing dataset with 'X' array.
-    --epochs        Number of training epochs (default: 50).
-    --batch_size    Size of training batches (default: 32).
-    --output        Output directory to save models and logs (default: models).
-    --head_size     Size of each attention head (default: 64).
-    --num_heads     Number of attention heads (default: 2).
-    --ff_dim        Dimensionality of feed-forward layers (default: 128).
-    --dropout       Dropout rate for all dropout layers (default: 0.1).
-    --num_blocks    Number of Transformer encoder/decoder blocks (default: 2).
+    Command-line Arguments:
+        --input (str): Path to the HDF5 file containing the dataset with 'X'.
+        --epochs (int): Number of training epochs for each fold (default: 50).
+        --batch_size (int): Batch size used during training (default: 32).
+        --output (str): Directory where model outputs and logs are saved (default: "models").
+        --head_size (int): Dimensionality of each attention head (default: 64).
+        --num_heads (int): Number of attention heads in the Transformer (default: 2).
+        --ff_dim (int): Dimensionality of feed-forward layers (default: 128).
+        --dropout (float): Dropout rate used in Transformer blocks (default: 0.1).
+        --num_blocks (int): Number of encoder and decoder Transformer blocks (default: 2).
+        --n_splits (int): Number of folds for K-Fold cross-validation (default: 5).
     """
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--input", type=str, required=True, help="Path to .hdf5 dataset with X"
+        "--input", type=str, required=True, help="Path to HDF5 with 'X'"
     )
-    parser.add_argument("--epochs", type=int, default=50, help="Training epochs")
+    parser.add_argument(
+        "--epochs", type=int, default=50, help="Number of training epochs"
+    )
     parser.add_argument(
         "--batch_size", type=int, default=32, help="Training batch size"
     )
     parser.add_argument("--output", type=str, default="models", help="Output directory")
     parser.add_argument(
-        "--head_size", type=int, default=64, help="Size of each attention head"
+        "--head_size", type=int, default=64, help="Size of attention heads"
     )
     parser.add_argument(
         "--num_heads", type=int, default=2, help="Number of attention heads"
     )
     parser.add_argument(
-        "--ff_dim", type=int, default=128, help="Feed-forward layer size"
+        "--ff_dim", type=int, default=128, help="Feed-forward layer dimension"
     )
     parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate")
     parser.add_argument(
         "--num_blocks", type=int, default=2, help="Number of transformer blocks"
+    )
+    parser.add_argument(
+        "--n_splits", type=int, default=5, help="Number of K-Fold splits"
+    )
+    parser.add_argument(
+        "--resume_from_fold",
+        type=int,
+        default=1,
+        help="Fold number (1-based) to resume training from",
     )
 
     args = parser.parse_args()
 
     set_seeds()
     X = load_and_normalize_from_hdf5(args.input, output_dir=args.output)
-    train_model(
+    train_model_kfold(
         X,
         output_dir=args.output,
         epochs=args.epochs,
@@ -235,6 +285,8 @@ def main():
         ff_dim=args.ff_dim,
         dropout=args.dropout,
         num_blocks=args.num_blocks,
+        n_splits=args.n_splits,
+        resume_from_fold=args.resume_from_fold,
     )
 
 
