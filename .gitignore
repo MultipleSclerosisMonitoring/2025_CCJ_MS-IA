@@ -197,3 +197,4 @@ checkpoints/
 logs/
 
 *.hdf5
+.idea/
