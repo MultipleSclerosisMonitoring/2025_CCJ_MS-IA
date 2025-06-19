@@ -68,145 +68,183 @@ def compute_mod_columns(df):
 
 
 def main():
-    """Main function to process and export balanced sensor chunks.
+    """Main entry point to export balanced sensor chunks as HDF5.
 
-    - Loads and validates .xlsx sensor chunks
-    - Computes signal magnitudes
-    - Truncates to median duration
-    - Balances class distribution
-    - Exports to compressed HDF5
+    This function processes Excel files containing sensor time series,
+    computes signal magnitudes, truncates each sample to a uniform length,
+    balances class distributions, and saves the result in a compressed
+    HDF5 dataset for training.
+
+    Behavior depends on whether a fixed length is specified:
+
+    - If `--fixed_length` is provided, only segments with length >= fixed_length
+      are kept and truncated to that value.
+    - Otherwise, the median length of all segments is computed, and segments are
+      kept if they are within 125% of that median. Truncation is then applied.
+
+    Args:
+        Uses argparse to parse the following arguments:
+            --input (str): Folder with input .xlsx chunk files.
+            --output (str): Output folder to store the resulting HDF5 dataset.
+            --fixed_length (int, optional): Fixed length to truncate all segments.
+            --verbose (int): Verbosity level (0–3).
+
+    Raises:
+        Prints error messages if no valid segments are found or if loading fails.
     """
-    parser = argparse.ArgumentParser(
-        description="Export smart-truncated balanced chunks to HDF5."
-    )
-    parser.add_argument("--input", default="output", help="Folder with .xlsx chunks.")
-    parser.add_argument(
-        "--output", default=".", help="Output directory for .hdf5 file."
-    )
-    parser.add_argument(
-        "--verbose",
-        type=int,
-        choices=[0, 1, 2, 3],
-        default=1,
-        help="Verbose level (0-3).",
-    )
-    args = parser.parse_args()
 
-    input_dir = Path(args.input)
-    output_dir = Path(args.output)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    all_columns = [
-        "S0",
-        "S1",
-        "S2",
-        "Ax",
-        "Ay",
-        "Az",
-        "Gx",
-        "Gy",
-        "Gz",
-        "Mx",
-        "My",
-        "Mz",
-    ]
-    label_map = {"walking": 1, "not_walking": 0}
-
-    files = sorted(input_dir.glob("*.xlsx"))
-    chunk_info = []
-    chunk_lengths = []
-    skipped_too_short = 0
-    skipped_too_long = 0
-    skipped_missing_sensors = 0
-
-    if args.verbose >= 1:
-        print(f"📂 Input: {input_dir} | 💾 Output: {output_dir}")
-
-    for file in tqdm(files, desc="📊 Analyzing chunks"):
-        if "+" not in file.name or file.name == "resumen_chunks.xlsx":
-            continue
-        parts = file.stem.split("+")
-        if len(parts) < 5:
-            continue
-        move_type = parts[1]
-        if move_type not in label_map:
-            continue
-        try:
-            df = pd.read_excel(file)
-            if not all(col in df.columns for col in all_columns):
-                skipped_missing_sensors += 1
-                continue
-            df = df.dropna(subset=all_columns)
-            if df.empty or len(df) < 10:
-                skipped_too_short += 1
-                continue
-            df_mod = compute_mod_columns(df)
-            chunk_info.append((file.name, move_type, df_mod.values))
-            chunk_lengths.append(len(df_mod))
-        except Exception as e:
-            if args.verbose >= 3:
-                print(f"⚠️ Error reading {file.name}: {e}")
-
-    if not chunk_lengths:
-        print("❌ No valid chunks found.")
-        return
-
-    median_len = int(np.median(chunk_lengths))
-    length_threshold = int(median_len * 1.25)
-
-    if args.verbose >= 1:
-        print(
-            f"\n📏 Truncating to median: {median_len}, max allowed: {length_threshold}"
+    def main():
+        parser = argparse.ArgumentParser(
+            description="Export smart-truncated balanced chunks to HDF5."
         )
+        parser.add_argument(
+            "--input", default="output", help="Folder with .xlsx chunks."
+        )
+        parser.add_argument(
+            "--output", default=".", help="Output directory for .hdf5 file."
+        )
+        parser.add_argument(
+            "--fixed_length",
+            type=int,
+            default=None,
+            help="Force fixed length for all segments.",
+        )
+        parser.add_argument(
+            "--verbose",
+            type=int,
+            choices=[0, 1, 2, 3],
+            default=1,
+            help="Verbose level (0-3).",
+        )
+        args = parser.parse_args()
 
-    X_all, y_all = [], []
-    label_counter = Counter()
+        input_dir = Path(args.input)
+        output_dir = Path(args.output)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
-    for filename, move_type, data in tqdm(chunk_info, desc="✂️ Filtering & truncating"):
-        if len(data) < median_len:
-            skipped_too_short += 1
-            continue
-        if len(data) > length_threshold:
-            skipped_too_long += 1
-            continue
-        data = data[:median_len]
-        X_all.append(data)
-        y_all.append(label_map[move_type])
-        label_counter[move_type] += 1
-        if args.verbose == 2:
-            print(f"✅ {filename}: kept {data.shape}")
+        all_columns = [
+            "S0",
+            "S1",
+            "S2",
+            "Ax",
+            "Ay",
+            "Az",
+            "Gx",
+            "Gy",
+            "Gz",
+            "Mx",
+            "My",
+            "Mz",
+        ]
+        label_map = {"walking": 1, "not_walking": 0}
 
-    X_all = np.array(X_all)
-    y_all = np.array(y_all)
+        files = sorted(input_dir.glob("*.xlsx"))
+        chunk_info = []
+        chunk_lengths = []
+        skipped_too_short = 0
+        skipped_too_long = 0
+        skipped_missing_sensors = 0
 
-    walking_idx = np.where(y_all == 1)[0]
-    not_walking_idx = np.where(y_all == 0)[0]
-    min_class_count = min(len(walking_idx), len(not_walking_idx))
+        if args.verbose >= 1:
+            print(f"📂 Input: {input_dir} | 💾 Output: {output_dir}")
 
-    np.random.shuffle(walking_idx)
-    np.random.shuffle(not_walking_idx)
+        for file in tqdm(files, desc="📊 Analyzing chunks"):
+            if "+" not in file.name or file.name == "resumen_chunks.xlsx":
+                continue
+            parts = file.stem.split("+")
+            if len(parts) < 5:
+                continue
+            move_type = parts[1]
+            if move_type not in label_map:
+                continue
+            try:
+                df = pd.read_excel(file)
+                if not all(col in df.columns for col in all_columns):
+                    skipped_missing_sensors += 1
+                    continue
+                df = df.dropna(subset=all_columns)
+                if df.empty or len(df) < 10:
+                    skipped_too_short += 1
+                    continue
+                df_mod = compute_mod_columns(df)
+                chunk_info.append((file.name, move_type, df_mod.values))
+                chunk_lengths.append(len(df_mod))
+            except Exception as e:
+                if args.verbose >= 3:
+                    print(f"⚠️ Error reading {file.name}: {e}")
 
-    selected_idx = np.concatenate(
-        [walking_idx[:min_class_count], not_walking_idx[:min_class_count]]
-    )
-    np.random.shuffle(selected_idx)
+        if not chunk_lengths:
+            print("❌ No valid chunks found.")
+            return
 
-    X_bal = X_all[selected_idx]
-    y_bal = y_all[selected_idx]
+        if args.fixed_length is not None:
+            truncate_len = args.fixed_length
+            if args.verbose >= 1:
+                print(f"\n📏 Forcing fixed length: {truncate_len}")
+        else:
+            truncate_len = int(np.median(chunk_lengths))
+            length_threshold = int(truncate_len * 1.30)
+            if args.verbose >= 1:
+                print(
+                    f"\n📏 Truncating to median: {truncate_len}, max allowed: {length_threshold}"
+                )
 
-    save_to_hdf5(X_bal, y_bal, output_dir, length=median_len)
+        X_all, y_all = [], []
+        label_counter = Counter()
 
-    print(f"\n✅ Balanced dataset saved: {len(X_bal)} samples")
-    print(f"📐 X shape: {X_bal.shape} | y shape: {y_bal.shape}")
+        for filename, move_type, data in tqdm(
+            chunk_info, desc="✂️ Filtering & truncating"
+        ):
+            if args.fixed_length is not None:
+                if len(data) < truncate_len:
+                    skipped_too_short += 1
+                    continue
+            else:
+                if len(data) < truncate_len:
+                    skipped_too_short += 1
+                    continue
+                if len(data) > length_threshold:
+                    skipped_too_long += 1
+                    continue
 
-    if args.verbose == 3:
-        print("\n📊 Class distribution after balancing:")
-        print(f"  - walking: {sum(y_bal == 1)}")
-        print(f"  - not_walking: {sum(y_bal == 0)}")
-        print("\n🚫 Skipped files:")
-        print(f"  - Too short: {skipped_too_short}")
-        print(f"  - Too long: {skipped_too_long}")
-        print(f"  - Missing sensors: {skipped_missing_sensors}")
+            data = data[:truncate_len]
+            X_all.append(data)
+            y_all.append(label_map[move_type])
+            label_counter[move_type] += 1
+            if args.verbose == 2:
+                print(f"✅ {filename}: kept {data.shape}")
+
+        X_all = np.array(X_all)
+        y_all = np.array(y_all)
+
+        walking_idx = np.where(y_all == 1)[0]
+        not_walking_idx = np.where(y_all == 0)[0]
+        min_class_count = min(len(walking_idx), len(not_walking_idx))
+
+        np.random.shuffle(walking_idx)
+        np.random.shuffle(not_walking_idx)
+
+        selected_idx = np.concatenate(
+            [walking_idx[:min_class_count], not_walking_idx[:min_class_count]]
+        )
+        np.random.shuffle(selected_idx)
+
+        X_bal = X_all[selected_idx]
+        y_bal = y_all[selected_idx]
+
+        save_to_hdf5(X_bal, y_bal, output_dir, length=truncate_len)
+
+        print(f"\n✅ Balanced dataset saved: {len(X_bal)} samples")
+        print(f"📐 X shape: {X_bal.shape} | y shape: {y_bal.shape}")
+
+        if args.verbose == 3:
+            print("\n📊 Class distribution after balancing:")
+            print(f"  - walking: {sum(y_bal == 1)}")
+            print(f"  - not_walking: {sum(y_bal == 0)}")
+            print("\n🚫 Skipped files:")
+            print(f"  - Too short: {skipped_too_short}")
+            print(f"  - Too long: {skipped_too_long}")
+            print(f"  - Missing sensors: {skipped_missing_sensors}")
 
 
 if __name__ == "__main__":
