@@ -197,9 +197,11 @@ def train_model_kfold(
         )
         model.compile(optimizer=Adam(0.001), loss="mse")
 
+        # ... [todo lo anterior sin cambios] ...
+
         callbacks = [
             EarlyStopping(patience=10, restore_best_weights=True),
-            ModelCheckpoint(str(fold_dir / "best_model.h5"), save_best_only=True),
+            ModelCheckpoint(str(fold_dir / "best_model.keras"), save_best_only=True),
             CSVLogger(str(fold_dir / "training_log.csv")),
         ]
 
@@ -213,12 +215,12 @@ def train_model_kfold(
             callbacks=callbacks,
         )
 
-        model.save(fold_dir / "transformer_autoencoder.h5")
+        model.save(fold_dir / "transformer_autoencoder.keras")
         encoder = Model(model.input, model.get_layer("encoder_output").output)
-        encoder.save(fold_dir / "encoder_transformer.h5")
+        encoder.save(fold_dir / "encoder_transformer.keras")
         np.save(fold_dir / "loss_history.npy", history.history)
 
-    print("\n✅ All folds completed.")
+        print("\n✅ All folds completed.")
 
 
 def main():
