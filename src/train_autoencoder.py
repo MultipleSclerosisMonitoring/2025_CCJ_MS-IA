@@ -197,8 +197,6 @@ def train_model_kfold(
         )
         model.compile(optimizer=Adam(0.001), loss="mse")
 
-        # ... [todo lo anterior sin cambios] ...
-
         callbacks = [
             EarlyStopping(patience=10, restore_best_weights=True),
             ModelCheckpoint(str(fold_dir / "best_model.keras"), save_best_only=True),
