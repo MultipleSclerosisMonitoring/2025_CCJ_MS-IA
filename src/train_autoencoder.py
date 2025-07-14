@@ -185,6 +185,13 @@ def train_model_kfold(
 
         X_train, X_val = X[train_idx], X[val_idx]
 
+        # Save validation (test) indices and data for later supervised evaluation
+        np.save(fold_dir / "test_indices.npy", val_idx)
+
+        with h5py.File(fold_dir / "test_data.hdf5", "w") as f:
+            f.create_dataset("X", data=X_val)
+            f.create_dataset("indices", data=val_idx)
+
         model = build_transformer_autoencoder(
             timesteps, features, head_size, num_heads, ff_dim, num_blocks, dropout
         )
