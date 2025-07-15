@@ -24,7 +24,7 @@ def plot_and_summarize_all_models(base_dir="."):
     """
     summary_records = []
 
-    for model_dir in sorted(Path(base_dir).glob("models_len*")):
+    for model_dir in sorted(Path(base_dir, "models_len").glob("models_len*")):
         model_name = model_dir.name
         match = re.search(r"models_len(\d+)", model_name)
         segment_len = int(match.group(1)) if match else None
