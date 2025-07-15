@@ -13,6 +13,13 @@ from sklearn.metrics import (
     accuracy_score,
 )
 import os
+import re
+
+
+def extract_segment_length(file_name):
+    """Extract segment length (e.g. 150 from 'latents_len150_fold1.npz')"""
+    match = re.search(r"len(\d+)", file_name)
+    return f"len{match.group(1)}" if match else "unknown"
 
 
 def load_latents(npz_path):
@@ -22,7 +29,7 @@ def load_latents(npz_path):
 
 
 def evaluate_classifier(
-    X, y, file_name, test_size=0.2, save=False, title="Confusion Matrix"
+    X, y, file_name, segment_suffix, test_size=0.2, save=False, title="Confusion Matrix"
 ):
     """Train and evaluate a classifier on latent space. Returns a DataFrame with all results."""
     X_train, X_test, y_train, y_test = train_test_split(
@@ -52,7 +59,7 @@ def evaluate_classifier(
     plt.title(title)
     plt.tight_layout()
     if save:
-        filename = f"{title.replace(' ', '_').lower()}.png"
+        filename = f"{title.replace(' ', '_').lower()}_{segment_suffix}.png"
         plt.savefig(filename, dpi=300)
         print(f"📁 Saved confusion matrix to: {filename}")
     plt.show()
@@ -67,6 +74,7 @@ def evaluate_classifier(
         records.append(
             {
                 "file_name": file_name,
+                "segment": segment_suffix,
                 "n_samples": n_samples,
                 "n_features": n_features,
                 "accuracy": acc,
@@ -91,11 +99,12 @@ def main():
     parser.add_argument(
         "--output_csv",
         default="results_latent_classifier.csv",
-        help="Output CSV file name",
+        help="Base name for output CSV",
     )
     args = parser.parse_args()
 
     file_name = os.path.basename(args.input)
+    segment_suffix = extract_segment_length(file_name)
     X_latent, y = load_latents(args.input)
     print(f"✅ Loaded latent shape: {X_latent.shape}, Labels: {np.unique(y)}")
 
@@ -103,13 +112,14 @@ def main():
         X_latent,
         y,
         file_name=file_name,
+        segment_suffix=segment_suffix,
         test_size=args.test_size,
         save=args.save,
         title=f"Confusion Matrix ({file_name})",
     )
 
     # Append to CSV (create or update)
-    output_file = args.output_csv
+    output_file = args.output_csv.replace(".csv", f"_{segment_suffix}.csv")
     if os.path.exists(output_file):
         results_df.to_csv(output_file, mode="a", header=False, index=False)
     else:
