@@ -50,7 +50,9 @@ def extract_segment_length(path):
     return f"len{match.group(1)}" if match else "unknown"
 
 
-def evaluate_classifier(X_latent, y_true, file_name, segment_suffix, fold_id, save=False):
+def evaluate_classifier(
+    X_latent, y_true, file_name, segment_suffix, fold_id, save=False
+):
     """Train and evaluate a classifier on the latent space for one fold.
 
     Args:
@@ -91,20 +93,22 @@ def evaluate_classifier(X_latent, y_true, file_name, segment_suffix, fold_id, sa
         if label in {"accuracy", "macro avg", "weighted avg"}:
             continue
         row = report[label]
-        records.append({
-            "file_name": file_name,
-            "segment": segment_suffix,
-            "fold": fold_id,
-            "n_samples": X_latent.shape[0],
-            "n_features": X_latent.shape[1],
-            "accuracy": acc,
-            "f1_macro": f1_macro,
-            "recall_macro": recall_macro,
-            "class": label,
-            "f1_score": row["f1-score"],
-            "recall": row["recall"],
-            "support": row["support"],
-        })
+        records.append(
+            {
+                "file_name": file_name,
+                "segment": segment_suffix,
+                "fold": fold_id,
+                "n_samples": X_latent.shape[0],
+                "n_features": X_latent.shape[1],
+                "accuracy": acc,
+                "f1_macro": f1_macro,
+                "recall_macro": recall_macro,
+                "class": label,
+                "f1_score": row["f1-score"],
+                "recall": row["recall"],
+                "support": row["support"],
+            }
+        )
     return pd.DataFrame(records)
 
 
@@ -125,10 +129,20 @@ def main():
         --save: If set, saves confusion matrix plots per fold.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_dir", required=True, help="Path to models_lenXXX folder")
-    parser.add_argument("--original_dataset", required=True, help="Path to original balanced HDF5")
-    parser.add_argument("--output_csv", default="results_latent_classifier.csv", help="Output CSV base name")
-    parser.add_argument("--save", action="store_true", help="Save confusion matrix plots")
+    parser.add_argument(
+        "--model_dir", required=True, help="Path to models_lenXXX folder"
+    )
+    parser.add_argument(
+        "--original_dataset", required=True, help="Path to original balanced HDF5"
+    )
+    parser.add_argument(
+        "--output_csv",
+        default="results_latent_classifier.csv",
+        help="Output CSV base name",
+    )
+    parser.add_argument(
+        "--save", action="store_true", help="Save confusion matrix plots"
+    )
     args = parser.parse_args()
 
     model_dir = Path(args.model_dir)
@@ -147,7 +161,9 @@ def main():
         test_data_path = fold_dir / "test_data.hdf5"
         test_idx_path = fold_dir / "test_indices.npy"
 
-        if not (encoder_path.exists() and test_data_path.exists() and test_idx_path.exists()):
+        if not (
+            encoder_path.exists() and test_data_path.exists() and test_idx_path.exists()
+        ):
             print(f"❌ Skipping {fold_dir.name}, missing files.")
             continue
 
@@ -183,4 +199,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
