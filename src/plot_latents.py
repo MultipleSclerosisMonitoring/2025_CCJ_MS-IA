@@ -70,7 +70,7 @@ def plot_embedding(X, y=None, method="umap", title="Latent Space", save=False):
     plt.figure(figsize=(10, 6))
     if y is not None:
         scatter = plt.scatter(
-            X_embedded[:, 0], X_embedded[:, 1], c=y, cmap="tab10", alpha=0.6
+            X_embedded[:, 0], X_embedded[:, 1], c=y, cmap="Set1", alpha=0.6
         )
         plt.legend(*scatter.legend_elements(), title="Clase")
     else:
@@ -83,9 +83,8 @@ def plot_embedding(X, y=None, method="umap", title="Latent Space", save=False):
     plt.tight_layout()
 
     if save:
-        filename = f"{title.replace(' ', '_').lower()}_{method}.png"
-        plt.savefig(filename, dpi=300)
-        print(f"📁 Plot saved as: {filename}")
+        plt.savefig(output_name, dpi=300)
+        print(f"📁 Plot saved as: {output_name}")
 
     plt.show()
 
@@ -122,12 +121,18 @@ def main():
         except Exception as e:
             print(f"⚠️ Error computing silhouette score: {e}")
 
+    # Extract segment length
+    segment_length = extract_segment_length(args.input)
+
+    filename = f"latent_{args.method}_{segment_length}.png"
+
     plot_embedding(
         X_latent,
         y,
         method=args.method,
         title=f"Latent Visualization ({args.method.upper()})",
         save=args.save,
+        output_name=filename,
     )
 
 
