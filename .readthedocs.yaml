@@ -12,7 +12,7 @@ sphinx:
    configuration: docs/conf.py
 # Optionally, but recommended,
 # declare the Python requirements required to build your documentation
-# See https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
+# See https://2025-ai-gait-identification.readthedocs.io/en/latest/
 # python:
 #    install:
 #    - requirements: docs/requirements.txt
