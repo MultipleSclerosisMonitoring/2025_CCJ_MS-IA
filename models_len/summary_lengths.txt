@@ -1,0 +1,2 @@
+Length 150: mean val_loss = 0.245002, std = 0.005005
+Length 240: mean val_loss = 0.251120, std = 0.005566
