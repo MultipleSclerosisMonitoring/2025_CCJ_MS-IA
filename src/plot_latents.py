@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import silhouette_score
 from sklearn.decomposition import PCA
 from pathlib import Path
+import re
 
 try:
     import umap
@@ -45,18 +46,34 @@ def load_latents(npz_path):
     return X_latent, y
 
 
-def plot_embedding(X, y=None, method="umap", title="Latent Space", save=False):
+def extract_segment_length(path_str):
+    """Extract segment length (e.g. 295) from path like 'latent_len295_fold4'.
+
+    Args:
+        path_str (str): Path or folder name.
+
+    Returns:
+        str: Extracted segment length (e.g. '295'), or 'unknown' if not found.
+    """
+    match = re.search(r"len(\d+)", path_str)
+    return match.group(1) if match else "unknown"
+
+
+def plot_embedding(
+    X, y=None, method="umap", title="Latent Space", save=False, output_name=None
+):
     """Reduce dimensionality of latent space and generate a scatter plot.
 
     Args:
         X (np.ndarray): Latent feature vectors of shape (n_samples, n_features).
-        y (np.ndarray, optional): Class labels for coloring the points. Defaults to None.
-        method (str): Dimensionality reduction method. Options: 'umap', 'pca'. Defaults to 'umap'.
-        title (str): Title of the plot. Defaults to "Latent Space".
-        save (bool): Whether to save the plot as a PNG file. Defaults to False.
+        y (np.ndarray, optional): Class labels for coloring the points.
+        method (str): Dimensionality reduction method: 'umap' or 'pca'.
+        title (str): Title of the plot.
+        save (bool): Whether to save the plot as a PNG file.
+        output_name (str, optional): Custom filename for the output plot.
 
     Raises:
-        ValueError: If the specified method is unsupported or UMAP is not installed.
+        ValueError: If method is unsupported or UMAP is not installed.
     """
     if method == "umap" and HAS_UMAP:
         reducer = umap.UMAP(n_components=2, metric="cosine", random_state=42)
@@ -67,37 +84,72 @@ def plot_embedding(X, y=None, method="umap", title="Latent Space", save=False):
 
     X_embedded = reducer.fit_transform(X)
 
+    # Compute Silhouette Score in the reduced space with appropriate metric
+    if y is not None and len(np.unique(y)) > 1:
+        try:
+            silhouette_metric = "cosine" if method == "umap" else "euclidean"
+            score = silhouette_score(X_embedded, y, metric=silhouette_metric)
+            print(
+                f"📊 Silhouette Score ({method.upper()} space, {silhouette_metric}): {score:.4f}"
+            )
+        except Exception as e:
+            print(f"⚠️ Error computing silhouette score in {method.upper()} space: {e}")
+
     plt.figure(figsize=(10, 6))
     if y is not None:
         scatter = plt.scatter(
             X_embedded[:, 0], X_embedded[:, 1], c=y, cmap="Set1", alpha=0.6
         )
-        plt.legend(*scatter.legend_elements(), title="Clase")
+        plt.legend(*scatter.legend_elements(), title="Class")
     else:
         plt.scatter(X_embedded[:, 0], X_embedded[:, 1], alpha=0.6)
 
     plt.title(title)
-    plt.xlabel("Componente 1")
-    plt.ylabel("Componente 2")
+    plt.xlabel("Component 1")
+    plt.ylabel("Component 2")
     plt.grid(True)
     plt.tight_layout()
 
     if save:
-        plt.savefig(output_name, dpi=300)
-        print(f"📁 Plot saved as: {output_name}")
+        filename = (
+            output_name
+            if output_name
+            else f"{title.replace(' ', '_').lower()}_{method}.png"
+        )
+        plt.savefig(filename, dpi=300)
+        print(f"📁 Plot saved as: {filename}")
 
     plt.show()
 
 
-def main():
-    """Main function to load latent data, compute Silhouette Score, and visualize embeddings.
+def extract_model_suffix(path_str):
+    """Extract model suffix (e.g., 'B') from folder name like 'latent_len295_B_fold2'.
 
-    Parses command-line arguments to:
-    - Load a .npz file containing latent vectors and optional labels.
-    - Compute the Silhouette Score (if labels are present and valid).
-    - Apply dimensionality reduction (UMAP or PCA).
-    - Plot the resulting 2D embeddings and optionally save the plot.
+    Args:
+        path_str (str): Input path string.
+
+    Returns:
+        str: Extracted model suffix, or '' if not found.
     """
+    match = re.search(r"len\d+_([A-Z])_", path_str)
+    return match.group(1) if match else ""
+
+
+def extract_fold_number(path_str):
+    """Extract fold number (e.g., 'fold3') from folder or file path.
+
+    Args:
+        path_str (str): Input path string.
+
+    Returns:
+        str: Fold number string (e.g., 'fold3'), or '' if not found.
+    """
+    match = re.search(r"fold(\d+)", path_str)
+    return f"fold{match.group(1)}" if match else ""
+
+
+def main():
+    """Main function to load latent data, compute Silhouette Score, and visualize embeddings."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--input", required=True, help="Path to .npz file with latent vectors"
@@ -114,17 +166,25 @@ def main():
     X_latent, y = load_latents(args.input)
     print(f"✅ Loaded latent shape: {X_latent.shape}")
 
-    if y is not None and len(np.unique(y)) > 1:
-        try:
-            score = silhouette_score(X_latent, y, metric="cosine")
-            print(f"📊 Silhouette Score (original space, cosine): {score:.4f}")
-        except Exception as e:
-            print(f"⚠️ Error computing silhouette score: {e}")
+    # Optional: Silhouette Score in original latent space (for reference)
+    # if y is not None and len(np.unique(y)) > 1:
+    #   try:
+    #        score = silhouette_score(X_latent, y, metric="cosine")
+    #        print(f"📊 Silhouette Score (original space, cosine): {score:.4f}")
+    #    except Exception as e:
+    #        print(f"⚠️ Error computing silhouette score: {e}")
 
-    # Extract segment length
     segment_length = extract_segment_length(args.input)
+    model_suffix = extract_model_suffix(args.input)
+    fold_suffix = extract_fold_number(args.input)
 
-    filename = f"latent_{args.method}_{segment_length}.png"
+    parts = ["latent", args.method, segment_length]
+    if model_suffix:
+        parts.append(model_suffix)
+    if fold_suffix:
+        parts.append(fold_suffix)
+
+    filename = "_".join(parts) + ".png"
 
     plot_embedding(
         X_latent,
