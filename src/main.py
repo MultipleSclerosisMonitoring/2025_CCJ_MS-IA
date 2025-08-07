@@ -39,7 +39,7 @@ def load_config_path(cli_config: str = None) -> str:
         return cli_config
     elif os.path.exists("..config_db.yaml"):
         return "..config_db.yaml"
-    elif os.path.exists(".config_db.yaml"):
+    elif os.path.exists("../.config_db.yaml"):
         return ".config_db.yaml"
     else:
         raise FileNotFoundError(

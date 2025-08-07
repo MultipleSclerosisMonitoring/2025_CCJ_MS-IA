@@ -90,6 +90,10 @@ def main():
         y=y if y is not None else [],
         timestamps=timestamps if timestamps is not None else [],
     )
+    np.save(Path(args.output) / "X_latents.npy", X_latent)
+
+    if y is not None:
+        np.save(Path(args.output) / "y_labels.npy", y)
 
     print(f"\n✅ Latent features saved to: {out_path}")
 
