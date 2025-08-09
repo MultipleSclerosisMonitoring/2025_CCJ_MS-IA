@@ -6,3 +6,5 @@ joblib
 scikit-learn
 tensorflow
 openpyxl
+sphinx
+sphinx-rtd-theme

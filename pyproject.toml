@@ -25,6 +25,8 @@ joblib = "^1.3"
 scikit-learn = "^1.3"
 h5py = "^3.10"
 tensorflow = "^2.15.0"
+sphinx = "^8.2.2"
+sphinx-rtd-theme = "^3.0.1"
 
 
 [build-system]
