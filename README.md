@@ -12,14 +12,35 @@ The extracted segments are prepared in structured files to train AI/deep learnin
 
 ## Project Structure
 
-```
-src/
-├── InfluxDBms/           # Module for querying and exporting from InfluxDB
-│   └── cInfluxDB.py
-├── plotting/             # Scripts for data visualization
-│   └── plot_chunks.py
-main.py                   # Main CLI extraction script
-pyproject.toml            # Poetry project definition
+src/ 
+- `InfluxDBms/ `: Query and clean data from InfluxDB
+- `plotting/ `: Plot and visualize latent representations
+- `export_balanced_chunks.py`:Segment and balance time series
+- `main.py`: Orchestrates the data pipeline 
+- `encode_latent_transformer.py`:Compress sequences using Transformer autoencoder 
+- `train_autoencoder.py`: Train Transformer-based autoencoder 
+- `evaluate_latent_classifier.py`: Evaluate latent classifiers with metrics 
+- `train_logistic_classifier.py`: Train logistic classifier on latents 
+- `inference.py`: Predict 'walk' vs 'no_walk' from new input
+
+Other folders:
+- `data_balanced/`, `latent_data/`, `output/`, `plots/`: intermediate artifacts and outputs
+- `docs/`: Sphinx documentation folder (see below)
+- `README.md`: Project overview (this file)
+- `requirements.txt` / `pyproject.toml`: dependencies and environment
+- `pyproject.toml`: poetry project definition
+
+## Documentation
+
+Auto-generated docs available at:  
+📎 https://2025-ai-gait-identification.readthedocs.io
+
+You can build it locally with:
+
+```bash
+cd docs
+make html
+start build/html/index.html  # On Windows
 ```
 
 ---
