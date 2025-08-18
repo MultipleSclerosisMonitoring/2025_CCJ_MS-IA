@@ -12,14 +12,6 @@ Subpackages
 Submodules
 ----------
 
-src.plot_chunks module
------------------------
-
-.. automodule:: src.plot_chunks
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 src.encode\_latent\_transformer module
 --------------------------------------
 
@@ -59,6 +51,15 @@ src.main module
    :members:
    :show-inheritance:
    :undoc-members:
+
+src.plot_chunks module
+-----------------------
+
+.. automodule:: src.plot_chunks
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 
 src.plot\_latents module
 ------------------------
