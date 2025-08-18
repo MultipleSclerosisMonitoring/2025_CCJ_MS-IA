@@ -7,7 +7,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   InfluxDBms
+   src.InfluxDBms
 
 Submodules
 ----------
@@ -15,7 +15,7 @@ Submodules
 encode_latent_transformer module
 --------------------------------
 
-.. automodule:: encode_latent_transformer
+.. automodule:: src.encode_latent_transformer
    :members:
    :show-inheritance:
    :undoc-members:
@@ -23,7 +23,7 @@ encode_latent_transformer module
 evaluate_latent_classifier module
 ---------------------------------
 
-.. automodule:: evaluate_latent_classifier
+.. automodule:: src.evaluate_latent_classifier
    :members:
    :show-inheritance:
    :undoc-members:
@@ -31,7 +31,7 @@ evaluate_latent_classifier module
 export_balanced_chunks module
 -----------------------------
 
-.. automodule:: export_balanced_chunks
+.. automodule:: src.export_balanced_chunks
    :members:
    :show-inheritance:
    :undoc-members:
@@ -39,7 +39,7 @@ export_balanced_chunks module
 inference module
 ----------------
 
-.. automodule:: inference
+.. automodule:: src.inference
    :members:
    :show-inheritance:
    :undoc-members:
@@ -47,7 +47,7 @@ inference module
 main module
 -----------
 
-.. automodule:: main
+.. automodule:: src.main
    :members:
    :show-inheritance:
    :undoc-members:
@@ -55,7 +55,7 @@ main module
 plot_chunks module
 ------------------
 
-.. automodule:: plot_chunks
+.. automodule:: src.plot_chunks
    :members:
    :show-inheritance:
    :undoc-members:
@@ -63,7 +63,7 @@ plot_chunks module
 plot_latents module
 -------------------
 
-.. automodule:: plot_latents
+.. automodule:: src.plot_latents
    :members:
    :show-inheritance:
    :undoc-members:
@@ -71,7 +71,7 @@ plot_latents module
 train_autoencoder module
 ------------------------
 
-.. automodule:: train_autoencoder
+.. automodule:: src.train_autoencoder
    :members:
    :show-inheritance:
    :undoc-members:
@@ -79,7 +79,7 @@ train_autoencoder module
 train_logistic_classifier module
 --------------------------------
 
-.. automodule:: train_logistic_classifier
+.. automodule:: src.train_logistic_classifier
    :members:
    :show-inheritance:
    :undoc-members:
