@@ -7,80 +7,79 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   src.InfluxDBms
+   InfluxDBms
 
 Submodules
 ----------
 
-src.encode\_latent\_transformer module
---------------------------------------
+encode_latent_transformer module
+--------------------------------
 
-.. automodule:: src.encode_latent_transformer
+.. automodule:: encode_latent_transformer
    :members:
    :show-inheritance:
    :undoc-members:
 
-src.evaluate\_latent\_classifier module
----------------------------------------
+evaluate_latent_classifier module
+---------------------------------
 
-.. automodule:: src.evaluate_latent_classifier
+.. automodule:: evaluate_latent_classifier
    :members:
    :show-inheritance:
    :undoc-members:
 
-src.export\_balanced\_chunks module
------------------------------------
-
-.. automodule:: src.export_balanced_chunks
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-src.inference module
---------------------
-
-.. automodule:: src.inference
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-src.main module
----------------
-
-.. automodule:: src.main
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-src.plot_chunks module
------------------------
-
-.. automodule:: src.plot_chunks
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-
-src.plot\_latents module
-------------------------
-
-.. automodule:: src.plot_latents
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-src.train\_autoencoder module
+export_balanced_chunks module
 -----------------------------
 
-.. automodule:: src.train_autoencoder
+.. automodule:: export_balanced_chunks
    :members:
    :show-inheritance:
    :undoc-members:
 
-src.train\_logistic\_classifier module
---------------------------------------
+inference module
+----------------
 
-.. automodule:: src.train_logistic_classifier
+.. automodule:: inference
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+main module
+-----------
+
+.. automodule:: main
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+plot_chunks module
+------------------
+
+.. automodule:: plot_chunks
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+plot_latents module
+-------------------
+
+.. automodule:: plot_latents
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+train_autoencoder module
+------------------------
+
+.. automodule:: train_autoencoder
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+train_logistic_classifier module
+--------------------------------
+
+.. automodule:: train_logistic_classifier
    :members:
    :show-inheritance:
    :undoc-members:
