@@ -6,6 +6,11 @@
 import sys
 from pathlib import Path
 import importlib.util
+import os
+
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
+os.environ.setdefault("TF_ENABLE_ONEDNN_OPTS", "0")
+
 
 # -- Path setup --------------------------------------------------------------
 # Add the project root so "import src" works
@@ -34,6 +39,10 @@ extensions = [
     "sphinx.ext.autosummary",
 ]
 autosummary_generate = True
+
+# Avoid importing heavy libs during autodoc on RTD
+autodoc_mock_imports = ["tensorflow", "keras"]
+
 
 templates_path = ["_templates"]
 exclude_patterns = []
