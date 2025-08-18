@@ -184,6 +184,9 @@ cython_debug/
 *.npy
 *.npz
 *.pkl
+*.hdf5
+*.h5
+*.ckpt
 *.ckpt
 *.weights
 *.pt
@@ -193,5 +196,9 @@ cython_debug/
 models/
 checkpoints/
 logs/
+data_balanced/
+models_len/
+docs/build/
+docs/source/_autosummary/
 
 .idea/
