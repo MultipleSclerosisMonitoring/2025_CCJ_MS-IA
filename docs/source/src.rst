@@ -8,15 +8,14 @@ Subpackages
    :maxdepth: 4
 
    src.InfluxDBms
-   src.plotting
 
 Submodules
 ----------
 
-src.analyze\_models module
---------------------------
+src.plot_chunks module
+-----------------------
 
-.. automodule:: src.analyze_models
+.. automodule:: src.plot_chunks
    :members:
    :show-inheritance:
    :undoc-members:
