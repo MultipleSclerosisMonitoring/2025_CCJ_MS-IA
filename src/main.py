@@ -14,8 +14,7 @@ import argparse
 import os
 import pandas as pd
 from datetime import datetime, timedelta, timezone
-from InfluxDBms.cInfluxDB import cInfluxDB
-
+from .InfluxDBms.cInfluxDB import cInfluxDB
 
 def load_config_path(cli_config: str = None) -> str:
     """
