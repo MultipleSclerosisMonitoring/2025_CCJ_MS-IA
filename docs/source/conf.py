@@ -9,6 +9,7 @@
     import sys
 
     sys.path.insert(0, os.path.abspath("../.."))
+
     project = "2025_AI_Gait_Identification"
     copyright = "2025, Jose Campos Cuiña"
     author = "Jose Campos Cuiña"
