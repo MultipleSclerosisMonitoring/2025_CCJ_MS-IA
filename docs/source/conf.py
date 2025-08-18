@@ -10,6 +10,16 @@ import sys
 
 sys.path.insert(0, os.path.abspath("../src"))
 
+import importlib.util
+
+for module in [
+    "inference",
+    "encode_latent_transformer",
+    "train_autoencoder",
+]:
+    spec = importlib.util.find_spec(module)
+    print(f"[SPHINX DEBUG] {module} found:", spec is not None)
+
 project = "2025_AI_Gait_Identification"
 copyright = "2025, Jose Campos Cuiña"
 author = "Jose Campos Cuiña"
