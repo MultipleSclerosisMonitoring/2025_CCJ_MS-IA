@@ -16,6 +16,7 @@ import pandas as pd
 from datetime import datetime, timedelta, timezone
 from .InfluxDBms.cInfluxDB import cInfluxDB
 
+
 def load_config_path(cli_config: str = None) -> str:
     """
     Determines which configuration file to use to connect to InfluxDB.
