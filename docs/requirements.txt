@@ -6,4 +6,5 @@ matplotlib
 umap-learn
 h5py
 influxdb-client
+sphinx-rtd-theme==2.*
 
