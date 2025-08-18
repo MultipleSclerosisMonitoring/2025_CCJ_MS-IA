@@ -15,4 +15,4 @@ sphinx:
 # See https://2025-ai-gait-identification.readthedocs.io/en/latest/
 python:
    install:
-   - requirements: requirements.txt
+   - requirements: docs/requirements.txt
