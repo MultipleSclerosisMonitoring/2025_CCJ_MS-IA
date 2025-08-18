@@ -6,4 +6,5 @@ matplotlib
 umap-learn
 h5py
 influxdb-client
-tensorflow==2.16.*   # or pin whatever you use; TF is heavy
+tensorflow==2.16.*
+keras
